@@ -1,0 +1,129 @@
+// ============================================
+// PRISMA SCHEMA — "Cetak Biru" Database Kita
+// ============================================
+// File ini mendefinisikan SEMUA tabel yang akan ada di database MySQL.
+// Prisma membaca file ini lalu otomatis membuat tabel-tabelnya untuk kita.
+
+// --- GENERATOR ---
+// Ini memberi tahu Prisma untuk membuat "client" (kode JavaScript)
+// yang bisa kita pakai untuk query database di kode kita nanti.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- DATASOURCE ---
+// Menghubungkan ke MySQL (bukan PostgreSQL bawaan).
+// URL koneksi diambil dari file .env kita.
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TABEL 1: User (Pengguna Sistem)
+// ============================================
+// Menyimpan data akun Admin Polda dan Operator Polres.
+// 
+// Kolom-kolom:
+// - id        : Nomor unik otomatis (Primary Key)
+// - name      : Nama pengguna atau nama Polres
+// - email     : Email untuk login (harus unik, tidak boleh sama)
+// - password  : Password yang sudah dienkripsi
+// - role      : Peran pengguna (ADMIN_POLDA atau OPERATOR_POLRES)
+// - createdAt : Waktu akun dibuat (otomatis diisi Prisma)
+// - updatedAt : Waktu terakhir data diubah (otomatis diisi Prisma)
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password      String
+  otp           String?  // Kode OTP (opsional, karena hanya terisi saat login)
+  otpExpiresAt  DateTime? // Waktu kedaluwarsa OTP
+  role          Role     @default(OPERATOR_POLRES)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // RELASI: Satu User bisa punya BANYAK submission (laporan).
+  // Ini seperti bilang: "User ini adalah pemilik dari banyak laporan."
+  submissions LapbulSubmission[]
+  notifications Notification[]
+
+  @@map("users") // Nama tabel di MySQL tetap "users" (huruf kecil)
+}
+
+// ============================================
+// ENUM Role — Daftar Peran yang Diizinkan
+// ============================================
+// Enum adalah "daftar pilihan tetap". Artinya kolom role 
+// HANYA BOLEH berisi salah satu dari nilai di bawah ini.
+// Jika ada yang mencoba memasukkan nilai lain, database akan menolak.
+enum Role {
+  ADMIN_POLDA
+  OPERATOR_POLRES
+}
+
+// ============================================
+// TABEL 2: MasterTindakPidana (Daftar Jenis Kejahatan)
+// ============================================
+// Berisi 57 jenis tindak pidana yang menjadi baris di laporan.
+// Data ini bersifat "master" — jarang berubah, diisi sekali oleh admin.
+model MasterTindakPidana {
+  id              Int      @id @default(autoincrement())
+  noUrut          Int      @unique  // Nomor urut (1-57), harus unik
+  namaTindakPidana String  @db.VarChar(255)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("master_tindak_pidana") // Nama tabel di MySQL
+}
+
+// ============================================
+// TABEL 3: LapbulSubmission (Laporan Bulanan)
+// ============================================
+// Ini adalah tabel utama yang menyimpan data angka dari Polres.
+// Setiap baris = 1 laporan dari 1 Polres untuk 1 bulan tertentu.
+//
+// Kolom penting:
+// - matriksData  : Data matriks 57x13 disimpan sebagai JSON
+//                  (fleksibel, tidak perlu membuat ratusan kolom)
+// - status       : DRAFT (belum final) atau SUBMITTED (sudah dikirim)
+// - isLocked     : Jika true, Operator tidak bisa mengubah lagi
+// - submittedAt  : Waktu submit (null jika belum di-submit)
+model LapbulSubmission {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  bulan       Int      // Bulan pelaporan (1-12)
+  tahun       Int      // Tahun pelaporan (2024, 2025, dst)
+  matriksData Json?    // Data matriks disimpan sebagai JSON
+  status      String   @default("DRAFT")
+  isLocked    Boolean  @default(false)
+  submittedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // RELASI: Setiap submission DIMILIKI oleh satu User.
+  // "fields: [userId]" artinya kolom userId di tabel ini 
+  // merujuk ke kolom id di tabel User.
+  user User @relation(fields: [userId], references: [id])
+
+  // CONSTRAINT: Satu user hanya boleh punya 1 laporan per bulan per tahun.
+  // Jadi Polres Minahasa tidak bisa membuat 2 laporan untuk Januari 2026.
+  @@unique([userId, bulan, tahun])
+  @@map("lapbul_submissions") // Nama tabel di MySQL
+}
+
+// ============================================
+// TABEL 3: Notification (Notifikasi Sistem)
+// ============================================
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

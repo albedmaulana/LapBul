@@ -1,0 +1,21 @@
+{
+  "name": "webbinops-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev --workspace=@webbinops/backend\" \"npm run dev --workspace=@webbinops/frontend\"",
+    "dev:backend": "npm run dev --workspace=@webbinops/backend",
+    "dev:frontend": "npm run dev --workspace=@webbinops/frontend",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:generate": "npm run prisma:generate --workspace=@webbinops/backend",
+    "db:migrate": "npm run prisma:migrate --workspace=@webbinops/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
