@@ -33,7 +33,8 @@ const LoginPage = () => {
                 setStep(2); // Lanjut ke layar OTP
             }
         } catch (err: any) {
-            setErrorMsg(err.response?.data?.error || 'Terjadi kesalahan pada server');
+            const errorData = err.response?.data?.error;
+            setErrorMsg(typeof errorData === 'string' ? errorData : 'Terjadi kesalahan pada server');
         } finally {
             setLoading(false);
         }
@@ -58,7 +59,8 @@ const LoginPage = () => {
                 navigate('/dashboard');
             }
         } catch (err: any) {
-            setErrorMsg(err.response?.data?.error || 'Kode OTP salah / kedaluwarsa');
+            const errorData = err.response?.data?.error;
+            setErrorMsg(typeof errorData === 'string' ? errorData : 'Kode OTP salah / kedaluwarsa');
         } finally {
             setLoading(false);
         }
