@@ -13,7 +13,8 @@
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "db:generate": "npm run prisma:generate --workspace=@webbinops/backend",
-    "db:migrate": "npm run prisma:migrate --workspace=@webbinops/backend"
+    "db:migrate": "npm run prisma:migrate --workspace=@webbinops/backend",
+    "postinstall": "npm run db:generate"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
