@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd apps/frontend && npx vite build",
+  "outputDirectory": "apps/frontend/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
