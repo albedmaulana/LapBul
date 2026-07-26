@@ -26,22 +26,30 @@ app.get('/', (req, res) => {
   });
 });
 
+// Buat router khusus untuk mengumpulkan semua jalur API
+const apiRouter = express.Router();
+
 // Daftarkan route Auth
 const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes); // Semua URL login akan diawali dengan /api/auth
+apiRouter.use('/auth', authRoutes); // Di dalam apiRouter, jalurnya jadi /auth
 
-// Nanti di sini kita akan tambahkan route untuk:
 // - Ambil Data Master Tindak Pidana
 const masterRoutes = require('./routes/master');
-app.use('/api/master', masterRoutes);
+apiRouter.use('/master', masterRoutes);
 
 // - Simpan Laporan
 const lapbulRoutes = require('./routes/lapbul');
-app.use('/api/lapbul', lapbulRoutes);
+apiRouter.use('/lapbul', lapbulRoutes);
 
 // - Notifikasi
 const notificationRoutes = require('./routes/notification');
-app.use('/api/notifications', notificationRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+
+// Pasangkan apiRouter ke app
+// Untuk Lokal (localhost:5000/api/...)
+app.use('/api', apiRouter);
+// Untuk Vercel (karena Vercel otomatis memotong /api dari URL)
+app.use('/', apiRouter);
 
 // - Rekapitulasi Data (Bisa ditambahkan nanti jika perlu rute khusus rekap)
 
